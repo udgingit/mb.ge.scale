@@ -1,0 +1,128 @@
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        Title="Lightning Protection" Height="720" Width="400"
+        WindowStartupLocation="CenterScreen">
+
+    <Window.Resources>
+        <!-- Base styles -->
+        <Style  x:Key="ControlSpacing" TargetType="FrameworkElement">
+            <Setter Property="Margin" Value="0,3,0,14"/>
+        </Style>
+        <SolidColorBrush x:Key="BaseTextColor" Color="#585858"/>
+        <x:Double x:Key="BaseFontSize">12</x:Double>
+        <FontWeight x:Key="BaseFontWeight">Bold</FontWeight>   
+
+        <!-- Style for Buttons -->
+        <Style  x:Key="ButtonStyle" TargetType="Button">
+            <Setter Property="Height" Value="25"/>
+            <Setter Property="Width" Value="25"/>
+            <Setter Property="Background" Value="White"/>
+            <Setter Property="FontFamily" Value="Segoe MDL2 Assets"/>
+            <Setter Property="FontSize" Value="16"/>
+            <Setter Property="FontWeight" Value="Bold"/>
+        </Style>
+        <!-- Header text Style -->
+        <Style x:Key="Header" TargetType="TextBlock">
+            <Setter Property="FontSize" Value="{StaticResource BaseFontSize}"/>
+            <Setter Property="Foreground" Value="{StaticResource BaseTextColor}"/>
+            <Setter Property="FontWeight" Value="{StaticResource BaseFontWeight}"/>
+        </Style>        
+        <!-- Style for TextBoxes -->
+        <Style  x:Key="TextBoxStyle" TargetType="TextBox"
+                BasedOn="{StaticResource ControlSpacing}">
+                <Setter Property="Height" Value="24"/>
+                <Setter Property="VerticalContentAlignment" Value="Center"/>
+        </Style>
+        <!-- Style for ComboBoxes-->
+        <Style  x:Key="ComboBoxStyle" TargetType="ComboBox"
+                BasedOn="{StaticResource ControlSpacing}">
+                <Setter Property="Height" Value="24"/>
+        </Style>
+        <!-- Style for CheckBoxes-->
+        <Style x:Key="CheckBoxStyle"
+            TargetType="CheckBox">
+            <Setter Property="FontSize" Value="{StaticResource BaseFontSize}"/>
+            <Setter Property="Foreground" Value="{StaticResource BaseTextColor}"/>
+            <Setter Property="FontWeight" Value="{StaticResource BaseFontWeight}"/>
+        </Style>
+        <!-- Element with pop-up information -->
+        <Style x:Key="HelpFieldStyle" TargetType="ContentControl">
+            <Setter Property="Template">
+                <Setter.Value>
+                    <ControlTemplate TargetType="ContentControl">
+                        <Grid>
+                            <Grid.ColumnDefinitions>
+                                <ColumnDefinition Width="*" />
+                                <ColumnDefinition Width="Auto" />
+                            </Grid.ColumnDefinitions>
+                            <!-- Left content -->
+                            <ContentPresenter   Grid.Column="0"
+                                                VerticalAlignment="Center"/>
+                            <!-- Right help button -->
+                            <Border Grid.Column="1"
+                                    Width="16" Height="16"
+                                    CornerRadius="8"
+                                    Background="#585858"
+                                    BorderThickness="0"
+                                    ToolTip="{Binding Tag, RelativeSource={RelativeSource TemplatedParent}}">
+                                    <TextBlock  Style="{StaticResource Header}"
+                                                Foreground="White"
+                                                Text="?"
+                                                HorizontalAlignment="Center"
+                                                VerticalAlignment="Center"/>
+                            </Border>
+                        </Grid>
+                    </ControlTemplate>
+                </Setter.Value>
+            </Setter>
+        </Style>        
+                
+    </Window.Resources>
+
+
+    <StackPanel Margin="10">
+        <!-- Lightning protection Family names -->
+        <ContentControl     Style="{StaticResource HelpFieldStyle}"
+                            Tag="Provide a comma-separated list of Families from the &lt;ElectricalFixtures&gt; category&#10;that will be used as lightning rods.">
+            <TextBlock  Style="{StaticResource Header}" Text="Lightning protection Family names"/>
+        </ContentControl>
+        <TextBox    x:Name="FamilyNames"
+                    Style="{StaticResource TextBoxStyle}"
+                    Text = "MB_BLZ_FS, MB_BLZ_FS-S, MB_BLZ_FSF"/>
+                    
+        <!-- Protection Level -->
+        <TextBlock  Style="{StaticResource Header}" Text="Protection Level"/>
+        <ComboBox   x:Name="ProtectionLevel"
+                    Style="{StaticResource ComboBoxStyle}">
+            <ComboBoxItem Content="I (R = 20 m)"/>
+            <ComboBoxItem Content="II (R = 30 m)"/>
+            <ComboBoxItem Content="III (R = 45 m)"/>
+            <ComboBoxItem Content="IV (R = 60 m)" IsSelected="True"/>
+        </ComboBox>
+
+        <!-- Clear previous -->
+        <ContentControl x:Name="Temp" Style="{StaticResource HelpFieldStyle}"
+                        Margin="0,3,0,14"
+                        Tag="Clear previously created protection surfaces belonging to the current view.&#10;Elements will be filtered by the &lt;MC System Code&gt; parameter value.">
+            <CheckBox   x:Name="ClearExisting"
+                        Style="{StaticResource CheckBoxStyle}"
+                        Content="Clear existing Surfaces (on current View)"
+                        IsChecked="True"/>
+        </ContentControl>
+        <!-- Select points -->
+        <ContentControl Style="{StaticResource HelpFieldStyle}"
+                        Margin="0,3,0,14"
+                        Tag="If this option is enabled, you will be able to select lightning rods.&#10;If not, all lightning rods in the model will be selected.">          
+            <CheckBox   x:Name="SelectPoints"
+                        Style="{StaticResource CheckBoxStyle}"
+                        Content="Select protection Points"/>
+        </ContentControl>
+
+        <!-- Apply Button-->
+        <StackPanel Orientation="Horizontal" HorizontalAlignment="Right">
+
+            <Button x:Name="Apply" Style="{StaticResource ButtonStyle}" Content="&#xE73E;"/>
+        </StackPanel>
+    </StackPanel>
+
+</Window>
