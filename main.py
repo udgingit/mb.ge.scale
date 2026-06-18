@@ -1,3 +1,20 @@
+# NOTE:
+# Revit external command data object.  Retrieves an object that represents the View external command work on.
+# Set variable through the IExternalCommand interface / Leave as None through Dynamo.
+revit = None  # type: ExternalCommandData # type: ignore
+
+# NOTE:
+# Absolute path to the directory containing main.py.
+# Set variable through the IExternalCommand interface / Replace manually through Dynamo.
+project_dir: str = None  # type: str
+
+import sys
+sys.path.append(project_dir)
+
+# Only while debugging, reload user modules
+if 'modules' in sys.modules: del sys.modules['modules'] 
+import modules # modules.py
+
 import os
 import sys
 import random
@@ -10,107 +27,111 @@ from Autodesk.Revit.DB import (
     Transaction,
     XYZ, Plane
 )
-from Autodesk.Revit.DB.Structure import StructuralType
-from Autodesk.Revit.ApplicationServices import Application
-from Autodesk.Revit.Exceptions import OperationCanceledException
-from Autodesk.Revit.UI import TaskDialog, ExternalCommandData, UIApplication, UIDocument
-from Autodesk.Revit.UI.Selection import ISelectionFilter, ObjectType
-from RevitServices.Persistence import DocumentManager
+
+from Autodesk.Revit.UI import TaskDialog, ExternalCommandData
 from RevitServices.Transactions import TransactionManager
 from System.Collections.Generic import List
-from System.Collections import ICollection
-from System.Collections.ObjectModel import ObservableCollection
-from System import Uri, UriKind
-from System.IO import File, FileStream, FileMode, FileAccess, Path
-from System.Windows import Window
-from System.Windows.Markup import XamlReader
-from System.Windows.Media.Imaging import BitmapImage
 
-LENGTH = 10000
 
-# TODO the surface doesn't need to be a triangle
-# TODO math domain error in edge_by_two_simplices
-# TODO errors messages
-# NOTE: project_dir (path), revit (ExternalCommandData) and uiapp (UIApplication) are provided externally
-# They must exist before this script runs
-# Path to the project directory
-project_dir: str = None
-sys.path.append(project_dir)
-# The Revit external command data object passed from C#
-revit: ExternalCommandData = None
-# Represents an active session of the Autodesk Revit UI
-uiapp = revit.Application if revit else None  # type: UIApplication
-# Returns the database level Application represented by this UI-level Application
-app = uiapp.Application if uiapp else None  # type: Application
-# Provides access to the currently active project
-uidoc = uiapp.ActiveUIDocument if uiapp else None  # type: UIDocument
-# Returns the database level document represented by this UI-level document
-doc = uidoc.Document if uidoc else None  # type: Document
-# Selected element IDs in the current document
-sel = uidoc.Selection.GetElementIds() if uidoc else None  # type: ICollection
-sys.path.append(r'c:\Users\yevhen.khlopeniuk\Documents\Script\.lib\internal')
 
-from math import pi, atan, degrees
+
+from math import pi, atan, atan2, degrees, sin, asin, cos, radians, sqrt
 from Autodesk.Revit.DB import SketchPlane, Arc, Line, Transform, BRepBuilder, BRepType, BRepBuilderSurfaceGeometry, BRepBuilderEdgeGeometry
 from Autodesk.Revit.DB import BRepBuilderOutcome, DirectShape, GeometryObject
 from Autodesk.Revit.Exceptions import *
 
+
+from internal.context import Context # Revit Model context
+
+context = Context(revit)
+doc = context.doc
+
+from model import InsolationScale, Sector
+from util import vector_to_angle, show_ray
 res = dict()
 
+
+# TODO define, how the window height is defined
+LENGTH = 10000
 def show_point(doc, point, radius=1/304.7):
     plane = Plane.CreateByNormalAndOrigin(XYZ.BasisZ, point)
     sketch_plane = SketchPlane.Create(doc, plane)
     arc = Arc.Create(point, radius, 0, 2*pi, XYZ.BasisX, XYZ.BasisY)
     doc.Create.NewModelCurve(arc, sketch_plane)
 
-def show_ray(doc, origin, vector, plane, length=5000/304.8):
-    sketch_plane = SketchPlane.Create(doc, plane)
-    line = Line.CreateBound(origin, origin.Add(vector.Multiply(length)))
-    doc.Create.NewModelCurve(line, sketch_plane)
+    
 
-class InsolationScale(object):
-    def __init__(self, doc, window):
+def rotate_vector(vector, axis, angle):
+    v = XYZ(vector.X, vector.Y, vector.Z)
+    transform = Transform.CreateRotation(axis, angle)
+    return transform.OfVector(v)
+
+class InsScale(Sector):
+    angle = pi/3 # 60° between ground plane and direction to the Sun
+
+    def project(self, point):
+        denom = self.normal.DotProduct(XYZ.BasisZ)
+        t = self.normal.DotProduct(self.plane.Origin.Subtract(point)) / denom
+        return point.Add(XYZ.BasisZ.Multiply(t))    
+    
+    def __init__(self, doc, holder):
         self.doc = doc
-        self.window = window
+        self.window = holder # Window
         
-        # center point of the window
-        origin = window.Location.Point
-        height = window.Symbol.get_Parameter(BuiltInParameter.FAMILY_HEIGHT_PARAM).AsDouble() # TODO define, how is the window height defined
+        # Center point of the window
+        origin = holder.Location.Point
+        height = holder.Symbol.get_Parameter(BuiltInParameter.FAMILY_HEIGHT_PARAM).AsDouble()
         self.origin = origin.Add(XYZ(0, 0, height/2))
 
-        # align to window orientation
-        angle_oy = window.Location.Rotation + pi
-        transform = Transform.CreateRotation(XYZ.BasisZ, angle_oy)
-        self.axis = transform.OfVector(XYZ.BasisY)
+        # Align to the window orientation
+        self._axis = rotate_vector(
+            XYZ.BasisY,
+            XYZ.BasisZ,
+            holder.Location.Rotation + pi
+        )
 
-        # create scale plane
-        angle_oz = pi/6 # 30° between wall anp plane
-        angle_oz = pi/3 # 30° between wall anp plane
-        
-        horizontal_axis = Transform.CreateRotation( # mathes the wall orientation
-            XYZ.BasisZ, pi/2
-        ).OfVector(self.axis)
+        self.wall_axis = rotate_vector(
+            XYZ.BasisY,
+            XYZ.BasisZ,
+            holder.Location.Rotation - pi/2            
+        )
 
-        self.axis = Transform.CreateRotation( # center scale axis
-            horizontal_axis, angle_oz - pi/2
-        ).OfVector(self.axis)
+        # tilted axis lying in the scale plane
+        self.rot_axis = rotate_vector(
+            self._axis,
+            self.wall_axis,
+            -self.angle
+        )
 
-        self.normal = Transform.CreateRotation( # plane normal
-            horizontal_axis, pi/2
-        ).OfVector(self.axis)
+        # plane normal
+        self.normal = self.wall_axis.CrossProduct(self.rot_axis).Normalize()
 
-        self.plane = Plane.CreateByNormalAndOrigin(self.normal, self.origin)
+        self.plane = Plane.CreateByNormalAndOrigin(
+            self.normal,
+            self.origin
+        )
 
-        host = window.Host
+        host = holder.Host
         depth = host.Width
-        width = window.Symbol.get_Parameter(BuiltInParameter.FURNITURE_WIDTH).AsDouble()
-        angle = atan(width/depth) # half if the full scale angle
-        start = self.axis
-        transform = Transform.CreateRotation(self.normal, angle)
-        self.start = transform.OfPoint(start)
-        end = self.axis
-        transform = Transform.CreateRotation(self.normal, -angle)
-        self.end = transform.OfPoint(end)
+        width = holder.Symbol.get_Parameter(BuiltInParameter.FURNITURE_WIDTH).AsDouble()
+        angle = atan(width/depth)*2 # half if the full scale angle
+
+        self.direction_angle = atan2(self._axis.X, self._axis.Y)  # note: x,y swapped because reference is +Y
+        if self.direction_angle < 0: self.direction_angle += 2*pi
+
+
+        #self.start = rotate_vector(self._axis, XYZ.BasisZ, -angle)
+        #self.end = rotate_vector(self._axis, XYZ.BasisZ, angle)
+        super().__init__(self.direction_angle, angle)
+
+
+
+        """if holder.Id.IntegerValue == 327323:
+            b = self.origin.Add(self.end.Multiply(LENGTH*2.5/304.8))
+            TaskDialog.Show('_deb', str(b))
+            b = self.project(b)
+            TaskDialog.Show('_deb', str(b))"""
+
 
     def show_axis(self):
         show_ray(self.doc, self.origin, self.axis, self.plane)
@@ -119,7 +140,8 @@ class InsolationScale(object):
         show_ray(self.doc, self.origin, self.start, self.plane)
         show_ray(self.doc, self.origin, self.end, self.plane)
 
-    def draw_surface(self, num):
+
+    def draw_surface(self):
         self.shape = None
         builder = BRepBuilder(BRepType.OpenShell)
 
@@ -135,18 +157,29 @@ class InsolationScale(object):
         builder.SetFaceMaterialId(face_id, material_id)
         loop_id = builder.AddLoop(face_id)
 
+        left = XYZ(
+            sin(self.start),
+            cos(self.start),
+            0
+        )
+
+        right = XYZ(
+            sin(self.end),
+            cos(self.end),
+            0
+        )
+
         a = self.origin
-        b = self.origin.Add(self.axis.Multiply(LENGTH/304.8))
-        c = self.origin.Add(self.end.Multiply(LENGTH*2.5/304.8))
-        d = self.origin.Add(self.start.Multiply(LENGTH*2.5/304.8))
-        if num == 1:
-            edge1 = Line.CreateBound(a, b)
-            edge2 = Line.CreateBound(b, d)
-            edge3 = Line.CreateBound(d, a)
-        if num == 2:
-            edge1 = Line.CreateBound(a, c)
-            edge2 = Line.CreateBound(c, b)
-            edge3 = Line.CreateBound(b, a)
+        b = self.origin.Add(left.Multiply(LENGTH*2.5/304.8))
+        c = self.origin.Add(right.Multiply(LENGTH*2.5/304.8))
+
+        a = self.project(a)
+        b = self.project(b)
+        c = self.project(c)
+
+        edge1 = Line.CreateBound(a, b)
+        edge2 = Line.CreateBound(b, c)
+        edge3 = Line.CreateBound(c, a)
 
         self.edges = (edge1, edge2, edge3)
         for edge in self.edges:
@@ -193,25 +226,24 @@ TransactionManager.Instance.EnsureInTransaction(doc);
 
 generics = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_GenericModel).WhereElementIsNotElementType().ToElementIds() 
 for i in generics: doc.Delete(i)
+lines = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Lines).WhereElementIsNotElementType().ToElementIds() 
+for i in lines: doc.Delete(i)
 w = doc.GetElement(ElementId(323466))
 windows = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Windows).WhereElementIsNotElementType().ToElements()
+
+ins_ruler = InsolationScale(doc)
+ins_ruler.show_ruler()
+
 for w in windows:
-    o = InsolationScale(doc, w)
-    o.show_axis()
-    o.show_borders()
-    o.draw_surface(1)
-    o.draw_surface(2)
+    o = InsScale(doc, w)
+    o += ins_ruler
+    #o.show_axis()
+    #o.show_borders()
+    if not o.empty: o.draw_surface()
 
-#origin = get_origin(w)
-#show_point(doc, origin)
-#vector = get_center_vector(w)
-#show_ray(doc, origin, vector)
-#start, end = get_side_vectors(w, vector)
-#show_ray(doc, origin, start)
-#show_ray(doc, origin, end)
-#transaction.Commit()
-TransactionManager.Instance.TransactionTaskDone();
+TransactionManager.Instance.TransactionTaskDone()
 
-res['result'] = degrees(0)
+
+
 
 OUT = res
