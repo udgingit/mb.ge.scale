@@ -1,9 +1,11 @@
-from math import degrees, sin, cos
+from math import degrees, pi
 from Autodesk.Revit.UI import TaskDialog
 from Autodesk.Revit.DB import (
     FilteredElementCollector, BuiltInParameter, BuiltInCategory,
     XYZ,
 )
+
+from .vector import Vector
 
 
 class ObjectLocation(object):
@@ -19,12 +21,9 @@ class ObjectLocation(object):
             .OfCategory(BuiltInCategory.OST_ProjectBasePoint) \
             .FirstElement()
 
-        self.north_angle = base_point.get_Parameter(BuiltInParameter.BASEPOINT_ANGLETON_PARAM).AsDouble()
-        self.north = XYZ(
-            sin(self.north_angle),
-            cos(self.north_angle),
-            0
-        )
+        north_angle = base_point.get_Parameter(BuiltInParameter.BASEPOINT_ANGLETON_PARAM).AsDouble()
+        self.north = Vector(north_angle)
+        self.south = self.north.rotated(pi)
     
     @property
     def latitude_deg(self):

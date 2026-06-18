@@ -1,9 +1,12 @@
 from .util import (
-    vector_to_angle,
-    show_ray
+    xyz_to_direction,
+    direction_to_xyz,
+    show_ray,
+
 )
 
 __all__ = [
-    'vector_to_angle',
-    'show_ray'
+    'xyz_to_direction',
+    'direction_to_xyz'
+    'show_ray',
 ]

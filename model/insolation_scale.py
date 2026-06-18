@@ -4,9 +4,11 @@ from Autodesk.Revit.DB import XYZ, Plane
 
 from .object_location import ObjectLocation
 from .sector import Sector
-from util import vector_to_angle, show_ray
+from util import xyz_to_direction, show_ray
 
 class InsolationScale(Sector):
+    solar_declination = radians(23.45)
+
     def __init__(self, doc, day='22.03'):
         self.doc = doc
         # Ordinal number of the day in the year
@@ -15,11 +17,9 @@ class InsolationScale(Sector):
         # Object geographical location
         self.location = ObjectLocation(self.doc)
 
-        # Calculate Sun Vectors
-        self.get_sun_vectors()
+        self.calculate_sun_vectors()
         
-        south = self.location.north_angle + pi
-        super().__init__(south, self.sector)
+        super().__init__(self.location.south, self.sector)
 
     def normalize_xy(self, v):
         v2 = XYZ(v.X, v.Y, 0)
@@ -29,7 +29,7 @@ class InsolationScale(Sector):
         return XYZ(v2.X / length, v2.Y / length, 0)
 
 
-    def get_sun_vectors(self):
+    def calculate_sun_vectors(self):
         """
         Returns sun vectors for 6:00-18:00 solar time.
 
@@ -37,41 +37,41 @@ class InsolationScale(Sector):
         north_vector: вектор севера в координатах Revit
         """
 
-        lat = self.location.latitude
-
-        # 22 марта ≈ день года 81
-        self.day = 81
-
         # solar declination
-        decl_deg = 23.45 * sin(radians(360.0 * (284 + self.day) / 365.0))
-        decl = radians(decl_deg)
-
-        up = XYZ.BasisZ
-        north = self.normalize_xy(self.location.north)
+        B = radians(360.0 * (self.day - 81) / 365.0)
+        declination = (
+            0.006918
+            - 0.399912 * cos(B)
+            + 0.070257 * sin(B)
+            - 0.006758 * cos(2 * B)
+            + 0.000907 * sin(2 * B)
+            - 0.002697 * cos(3 * B)
+            + 0.00148  * sin(3 * B)
+        )        
 
         # East = North x Up
-        east = north.CrossProduct(up).Normalize()
+        east = self.location.north.CrossProduct(XYZ.BasisZ).Normalize()
 
         self.ruler = list()
 
-        for hour in range(8, 17):
+        for hour in range(4, 21):
             # solar hour angle
             H = radians(15.0 * (hour - 12.0))
 
             # altitude
             sin_alt = (
-                sin(lat) * sin(decl) +
-                cos(lat) * cos(decl) * cos(H)
+                sin(self.location.latitude) * sin(declination) +
+                cos(self.location.latitude) * cos(declination) * cos(H)
             )
 
             alt = asin(sin_alt)
             cos_alt = cos(alt)
 
             # azimuth from north, clockwise
-            sin_A = (-cos(decl) * sin(H)) / cos_alt
+            sin_A = (-cos(declination) * sin(H)) / cos_alt
             cos_A = (
-                cos(lat) * sin(decl) -
-                sin(lat) * cos(decl) * cos(H)
+                cos(self.location.latitude) * sin(declination) -
+                sin(self.location.latitude) * cos(declination) * cos(H)
             ) / cos_alt
 
             A = atan2(sin_A, cos_A)
@@ -79,13 +79,13 @@ class InsolationScale(Sector):
             # horizontal projection
             horizontal = (
                 east.Multiply(sin(A)).Add(
-                north.Multiply(cos(A)))
+                self.location.north.Multiply(cos(A)))
             ).Normalize()
 
             # full 3D vector to sun
             sun_vector = (
                 horizontal.Multiply(cos_alt).Add(
-                up.Multiply(sin(alt)))
+                XYZ.BasisZ.Multiply(sin(alt)))
             ).Normalize()
 
             self.ruler.append({
@@ -98,10 +98,11 @@ class InsolationScale(Sector):
 
         a = self.ruler[-1]['horizontal_vector']
         b = self.ruler[0]['horizontal_vector']
-        self.sector = vector_to_angle(a, None) - vector_to_angle(b, None)
+        self.sector = 2*pi - (xyz_to_direction(a) - xyz_to_direction(b))
 
     def show_ruler(self):
         for current in self.ruler:
             vector = current['horizontal_vector']
             plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), XYZ(0, 0, 0))
             show_ray(self.doc, XYZ(0, 0, 0), vector, plane)
+            

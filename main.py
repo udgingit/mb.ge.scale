@@ -47,7 +47,7 @@ context = Context(revit)
 doc = context.doc
 
 from model import InsolationScale, Sector
-from util import vector_to_angle, show_ray
+from util import show_ray
 res = dict()
 
 
