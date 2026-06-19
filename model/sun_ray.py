@@ -1,4 +1,4 @@
-from math import radians, degrees, sin, cos, asin, atan2
+from math import radians, degrees, sin, cos, asin, atan2, pi
 from Autodesk.Revit.DB import XYZ
 
 from .vector import Vector
@@ -29,20 +29,11 @@ class SunRay(Vector):
 
             A = atan2(sin_A, cos_A)
 
-            # Horizontal projection
-            #self.horizontal = direction_to_xyz(self.location.north.direction - A)
             super().__init__(north.direction - A)
 
             # full 3D vector to sun
-            sun_vector = (
+            self.sun = (
                 self.xyz.Multiply(cos(altitude)).Add(
                 XYZ.BasisZ.Multiply(sin(altitude)))
             ).Normalize()
-
-            """self.ruler.append({
-                "hour": hour,
-                "azimuth_deg": degrees(A) % 360,
-                "altitude_deg": degrees(altitude),
-                "horizontal_vector": horizontal,
-                "sun_vector": sun_vector
-            })    """        
+       

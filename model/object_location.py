@@ -21,8 +21,8 @@ class ObjectLocation(object):
             .OfCategory(BuiltInCategory.OST_ProjectBasePoint) \
             .FirstElement()
 
-        north_angle = base_point.get_Parameter(BuiltInParameter.BASEPOINT_ANGLETON_PARAM).AsDouble()
-        self.north = Vector(north_angle)
+        self.north_angle = base_point.get_Parameter(BuiltInParameter.BASEPOINT_ANGLETON_PARAM).AsDouble()
+        self.north = Vector(self.north_angle)
         self.south = self.north.rotated(pi)
     
     @property
