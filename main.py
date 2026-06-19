@@ -234,6 +234,7 @@ windows = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Windows).
 ins_ruler = InsolationScale(doc)
 ins_ruler.show_ruler()
 
+
 for w in windows:
     o = InsScale(doc, w)
     o += ins_ruler
