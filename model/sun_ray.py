@@ -8,7 +8,7 @@ class SunRay(Vector):
     def __init__(self, scale, hour):
         declination = scale.declination
         north = scale.location.north
-        latitude = scale.location.latitude
+        latitude = pi-scale.location.latitude
 
         if type(hour) is float:
             # Solar hour angle

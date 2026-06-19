@@ -40,9 +40,9 @@ class InsolationScale(Sector):
             - 0.002697 * cos(3 * B)
             + 0.00148  * sin(3 * B)
         )     
-        # self.declination = radians(
-        #    23.45 * sin(radians(360.0 * (284 + self.day) / 365.0))
-        # )
+        self.declination = radians(
+           23.45 * sin(radians(360.0 * (284 + self.day) / 365.0))
+        )
         self.ruler = [
             SunRay(self, float(hour))
             for hour in range(6, 19)
@@ -57,7 +57,7 @@ class InsolationScale(Sector):
             return transform.OfVector(v)
         
         east = rotate_vector(self.location.north.xyz, XYZ.BasisZ, pi/2)
-        self.normal = rotate_vector(self.location.north.xyz, east, -(pi/2 - self.location.latitude))
+        self.normal = rotate_vector(self.location.north.xyz, east, self.location.latitude)
         TaskDialog.Show('_deb', str(degrees(self.location.latitude)))
         self.plane = Plane.CreateByNormalAndOrigin(self.normal, XYZ(0, 0, 0))
         self.origin = XYZ(0, 0, 0)
@@ -72,6 +72,7 @@ class InsolationScale(Sector):
 
     def show_ruler(self):
         self.show_ruler_palne()
+        return
 
         self.shape = None
         builder = BRepBuilder(BRepType.OpenShell)
