@@ -33,7 +33,7 @@ class InsolationScale(Sector):
         #self.calculate_sun_vectors()
         self.ruler = [
             SunRay(self, float(hour))
-            for hour in range(6, 19)
+            for hour in range(7, 18)
         ]
         self.sector = 2*pi - self.ruler[-1].direction + self.ruler[0].direction
 
