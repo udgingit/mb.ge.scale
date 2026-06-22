@@ -6,9 +6,9 @@ from .vector import Vector
 
 class SunRay(Vector):
     def __init__(self, scale, hour):
-        declination = scale.declination
+        declination = scale.solar_declination
         north = scale.location.north
-        latitude = pi-scale.location.latitude
+        latitude = scale.location.latitude
 
         if type(hour) is float:
             # Solar hour angle
@@ -23,7 +23,7 @@ class SunRay(Vector):
             # Azimuth from north, clockwise
             sin_A = (-cos(declination) * sin(H)) / cos(altitude)
             cos_A = (
-                cos(latitude) * sin(declination) -
+                -cos(latitude) * sin(declination) -
                 sin(latitude) * cos(declination) * cos(H)
             ) / cos(altitude) 
 

@@ -18,7 +18,7 @@ from util import xyz_to_direction, direction_to_xyz, show_ray
 
 class InsolationScale(Sector):
     length = 25000/304.8
-    solar_declination = radians(23.45)
+    approximately = True
 
     def __init__(self, doc, day='22.03'):
         self.doc = doc
@@ -27,22 +27,7 @@ class InsolationScale(Sector):
 
         # Object geographical location
         self.location = ObjectLocation(self.doc)
-        self.location.show()
 
-        # Solar declination
-        B = radians(360.0 * (self.day - 81) / 365.0)
-        self.declination = radians(
-            0.006918
-            - 0.399912 * cos(B)
-            + 0.070257 * sin(B)
-            - 0.006758 * cos(2 * B)
-            + 0.000907 * sin(2 * B)
-            - 0.002697 * cos(3 * B)
-            + 0.00148  * sin(3 * B)
-        )     
-        self.declination = radians(
-           23.45 * sin(radians(360.0 * (284 + self.day) / 365.0))
-        )
         self.ruler = [
             SunRay(self, float(hour))
             for hour in range(6, 19)
@@ -58,11 +43,28 @@ class InsolationScale(Sector):
         
         east = rotate_vector(self.location.north.xyz, XYZ.BasisZ, pi/2)
         self.normal = rotate_vector(self.location.north.xyz, east, self.location.latitude)
-        TaskDialog.Show('_deb', str(degrees(self.location.latitude)))
         self.plane = Plane.CreateByNormalAndOrigin(self.normal, XYZ(0, 0, 0))
         self.origin = XYZ(0, 0, 0)
 
-
+    @property
+    def solar_declination(self):
+        # Solar declination
+        if self.approximately:
+            return radians(
+                23.45 * sin(radians(360.0 * (284 + self.day) / 365.0))
+            )
+        
+        B = radians(360.0 * (self.day - 81) / 365.0)
+        self.declination = radians(
+            0.006918
+            - 0.399912 * cos(B)
+            + 0.070257 * sin(B)
+            - 0.006758 * cos(2 * B)
+            + 0.000907 * sin(2 * B)
+            - 0.002697 * cos(3 * B)
+            + 0.00148  * sin(3 * B)
+        )    
+        
     def show_ruler_palne(self):
         plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), XYZ(0, 0, 0))
         for current in self.ruler:
@@ -72,7 +74,6 @@ class InsolationScale(Sector):
 
     def show_ruler(self):
         self.show_ruler_palne()
-        return
 
         self.shape = None
         builder = BRepBuilder(BRepType.OpenShell)
