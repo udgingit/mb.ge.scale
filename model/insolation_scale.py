@@ -19,8 +19,13 @@ from util import xyz_to_direction, direction_to_xyz, show_ray
 class InsolationScale(Sector):
     length = 25000/304.8
     approximately = True
+    hour_start = 7
+    hour_end = 24 - hour_start
+    step = 0.25
+    
 
     def __init__(self, doc, day='22.03'):
+
         self.doc = doc
         # Ordinal number of the day in the year
         self.day = datetime.strptime(day, '%d.%m').timetuple().tm_yday
@@ -28,23 +33,26 @@ class InsolationScale(Sector):
         # Object geographical location
         self.location = ObjectLocation(self.doc)
 
+        hours = [self.hour_start + i * self.step for i in range(int((self.hour_end-self.hour_start) / self.step) + 1)]
         self.ruler = [
             SunRay(self, float(hour))
-            for hour in range(6, 19)
+            for hour in hours
         ]
         self.sector = 2*pi - self.ruler[-1].direction + self.ruler[0].direction
 
         super().__init__(self.location.south, self.sector)
 
-        def rotate_vector(vector, axis, angle):
-            v = XYZ(vector.X, vector.Y, vector.Z)
-            transform = Transform.CreateRotation(axis, angle)
-            return transform.OfVector(v)
-        
-        east = rotate_vector(self.location.north.xyz, XYZ.BasisZ, pi/2)
-        self.normal = rotate_vector(self.location.north.xyz, east, self.location.latitude)
-        self.plane = Plane.CreateByNormalAndOrigin(self.normal, XYZ(0, 0, 0))
-        self.origin = XYZ(0, 0, 0)
+        self.origin = XYZ()
+        self.location.latitude = self.location.latitude
+        self.normal = XYZ(
+            -self.location.north.X * cos(self.location.latitude),
+            -self.location.north.Y * cos(self.location.latitude),
+            -sin(self.location.latitude)
+        )
+        self.plane = Plane.CreateByNormalAndOrigin(self.normal, self.origin)
+
+        for current in self.ruler:
+            show_ray(self.doc, self.origin, current.sun, self.plane)
 
     @property
     def solar_declination(self):
@@ -73,7 +81,6 @@ class InsolationScale(Sector):
 
 
     def show_ruler(self):
-        self.show_ruler_palne()
 
         self.shape = None
         builder = BRepBuilder(BRepType.OpenShell)
@@ -93,8 +100,8 @@ class InsolationScale(Sector):
             right = self.ruler[i].sun
 
             a = self.origin
-            b = self.origin.Add(left.Multiply(self.length))
-            c = self.origin.Add(right.Multiply(self.length))
+            c = self.origin.Add(left.Multiply(self.length))
+            b = self.origin.Add(right.Multiply(self.length))
 
             edge1 = Line.CreateBound(a, b)
             edge2 = Line.CreateBound(b, c)

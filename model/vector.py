@@ -9,7 +9,7 @@ class Vector(object):
     def __init__(self, source):
         if type(source) is XYZ:
             self.xyz = source
-            # Angle between self and XYZ(0, 1, 0)
+            # Full angle between self and XYZ(0, 1, 0) counted counter-clockwise
             self.direction = xyz_to_direction(self.xyz)
 
         elif type(source) is float:
@@ -50,5 +50,5 @@ class Vector(object):
     def show(self):
         TaskDialog.Show(
             'Vector',
-            'Angle = %f' % self.direction_deg
+            'Angle = %f; %s' % (self.direction_deg, str(self.xyz))
         )

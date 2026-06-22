@@ -240,7 +240,7 @@ for w in windows:
     o += ins_ruler
     #o.show_axis()
     #o.show_borders()
-    #if not o.empty: o.draw_surface()
+    if not o.empty: o.draw_surface()
 
 TransactionManager.Instance.TransactionTaskDone()
 
