@@ -229,18 +229,19 @@ for i in generics: doc.Delete(i)
 lines = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Lines).WhereElementIsNotElementType().ToElementIds() 
 for i in lines: doc.Delete(i)
 w = doc.GetElement(ElementId(323466))
+
 windows = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Windows).WhereElementIsNotElementType().ToElements()
 
 ins_ruler = InsolationScale(doc)
-ins_ruler.show_ruler()
+ins_ruler.show()
 
 
 for w in windows:
-    o = InsScale(doc, w)
-    o += ins_ruler
+    o = InsolationScale(doc)
+    o.place(w)
     #o.show_axis()
     #o.show_borders()
-    if not o.empty: o.draw_surface()
+    o.show()
 
 TransactionManager.Instance.TransactionTaskDone()
 

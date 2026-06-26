@@ -3,7 +3,7 @@ from math import sin, cos, degrees, radians, sqrt, pi, asin, atan2
 
 from System.Collections.Generic import List
 from Autodesk.Revit.DB import (
-    ElementId, BuiltInCategory,
+    ElementId, BuiltInCategory, BuiltInParameter,
     XYZ, Plane, Line, DirectShape, GeometryObject,
     BRepBuilder, BRepBuilderSurfaceGeometry, BRepType, BRepBuilderEdgeGeometry, BRepBuilderOutcome,
     Transform
@@ -15,6 +15,7 @@ from .object_location import ObjectLocation
 from .sector import Sector
 from .sun_ray import SunRay
 from util import xyz_to_direction, direction_to_xyz, show_ray
+
 
 class InsolationScale(Sector):
     length = 25000/304.8
@@ -33,7 +34,10 @@ class InsolationScale(Sector):
         # Object geographical location
         self.location = ObjectLocation(self.doc)
 
-        hours = [self.hour_start + i * self.step for i in range(int((self.hour_end-self.hour_start) / self.step) + 1)]
+        hours = [
+            self.hour_start + i * self.step
+            for i in range(int((self.hour_end-self.hour_start) / self.step) + 1)
+        ]
         self.ruler = [
             SunRay(self, float(hour))
             for hour in hours
@@ -51,8 +55,20 @@ class InsolationScale(Sector):
         )
         self.plane = Plane.CreateByNormalAndOrigin(self.normal, self.origin)
 
-        for current in self.ruler:
-            show_ray(self.doc, self.origin, current.sun, self.plane)
+    def place(self, holder):
+        self.origin = holder.Location.Point
+        height = holder.Symbol.get_Parameter(BuiltInParameter.FAMILY_HEIGHT_PARAM).AsDouble()
+        self.origin = self.origin.Add(XYZ(0, 0, height/2))
+        self.plane = Plane.CreateByNormalAndOrigin(self.normal, self.origin)
+
+
+        """host = holder.Host
+        depth = host.Width
+        width = holder.Symbol.get_Parameter(BuiltInParameter.FURNITURE_WIDTH).AsDouble()
+        angle = atan(width/depth)*2 # half if the full scale angle
+
+        self.direction_angle = atan2(self._axis.X, self._axis.Y)  # note: x,y swapped because reference is +Y
+        if self.direction_angle < 0: self.direction_angle += 2*pi"""
 
     @property
     def solar_declination(self):
@@ -73,14 +89,14 @@ class InsolationScale(Sector):
             + 0.00148  * sin(3 * B)
         )    
         
-    def show_ruler_palne(self):
+    def show_rays(self):
         plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), XYZ(0, 0, 0))
         for current in self.ruler:
             
             show_ray(self.doc, XYZ(0, 0, 0), current.xyz, plane)
 
 
-    def show_ruler(self):
+    def show(self):
 
         self.shape = None
         builder = BRepBuilder(BRepType.OpenShell)
