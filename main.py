@@ -233,7 +233,7 @@ w = doc.GetElement(ElementId(323466))
 windows = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Windows).WhereElementIsNotElementType().ToElements()
 
 ins_ruler = InsolationScale(doc)
-ins_ruler.show()
+#ins_ruler.show()
 
 
 for w in windows:
@@ -241,7 +241,7 @@ for w in windows:
     o.place(w)
     #o.show_axis()
     #o.show_borders()
-    o.show()
+    #o.show()
 
 TransactionManager.Instance.TransactionTaskDone()
 

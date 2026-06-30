@@ -1,5 +1,5 @@
 from datetime import datetime
-from math import sin, cos, degrees, radians, sqrt, pi, asin, atan2
+from math import sin, cos, degrees, radians, sqrt, pi, asin, atan2, tan, atan
 
 from System.Collections.Generic import List
 from Autodesk.Revit.DB import (
@@ -14,6 +14,7 @@ from Autodesk.Revit.UI import TaskDialog
 from .object_location import ObjectLocation
 from .sector import Sector
 from .sun_ray import SunRay
+from .vector import Vector
 from util import xyz_to_direction, direction_to_xyz, show_ray
 
 
@@ -62,12 +63,29 @@ class InsolationScale(Sector):
         self.plane = Plane.CreateByNormalAndOrigin(self.normal, self.origin)
 
 
-        """host = holder.Host
+        host = holder.Host
         depth = host.Width
         width = holder.Symbol.get_Parameter(BuiltInParameter.FURNITURE_WIDTH).AsDouble()
-        angle = atan(width/depth)*2 # half if the full scale angle
+        angle = atan(width/depth) # half if the full scale angle
 
-        self.direction_angle = atan2(self._axis.X, self._axis.Y)  # note: x,y swapped because reference is +Y
+        rot = holder.Location.Rotation
+        rot_d = degrees(rot)
+        rot = Vector(rot)
+        holder.LookupParameter('Comments').Set(str(rot_d))
+        start_a = rot.direction - angle
+        end_a = rot.direction + angle
+
+
+        plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), self.origin)
+        
+        start = Vector(start_a)
+        end = Vector(end_a)
+
+        #show_ray(self.doc, self.origin, start.xyz, plane)
+        #show_ray(self.doc, self.origin, end.xyz, plane)
+
+
+        """self.direction_angle = atan2(self._axis.X, self._axis.Y)  # note: x,y swapped because reference is +Y
         if self.direction_angle < 0: self.direction_angle += 2*pi"""
 
     @property
