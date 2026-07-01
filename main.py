@@ -235,13 +235,24 @@ windows = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Windows).
 ins_ruler = InsolationScale(doc)
 #ins_ruler.show()
 
+"""from Autodesk.Revit.DB import XYZ
+
+a = XYZ(0, -1, 0).AngleOnPlaneTo(
+        XYZ.BasisY,
+        XYZ.BasisZ
+    )
+
+TaskDialog.Show('_deb', str(degrees(a)))"""
+o = InsolationScale(doc)
+o.set_ruler(345853)
 
 for w in windows:
     o = InsolationScale(doc)
     o.place(w)
     #o.show_axis()
     #o.show_borders()
-    #o.show()
+    if o.ruler:
+        o.show()
 
 TransactionManager.Instance.TransactionTaskDone()
 

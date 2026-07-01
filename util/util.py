@@ -1,4 +1,4 @@
-from math import sin, cos, atan2
+from math import sin, cos, atan2, pi
 from Autodesk.Revit.DB import Transform, XYZ, Line, SketchPlane
 
 
@@ -78,6 +78,7 @@ def direction_to_xyz(
              180°
 
     """    
+    
     rotation = Transform.CreateRotation(
         XYZ.BasisZ,
         angle
@@ -161,7 +162,7 @@ def xyz_to_direction(
     )
 
 
-class AngleVector(object):
+"""class AngleVector(object):
     def __init__(self, default=XYZ(0, 1, 0)):
         self.default = default
 
@@ -170,4 +171,9 @@ class AngleVector(object):
             sin(angle),
             cos(angle),
             0
-        )
+        )"""
+def hours_to_string(hours):
+    minutes = hours * 60
+    hours = int(minutes/60)
+    minutes = minutes%60
+    return "%d' %d ''" % (hours, minutes)

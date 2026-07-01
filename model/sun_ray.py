@@ -11,6 +11,7 @@ class SunRay(Vector):
         north = scale.location.north
         latitude = scale.location.latitude
         if type(hour) is float:
+            self.hour = hour
             # Solar hour angle
             H = radians(15.0 * (hour - 12.0))
 

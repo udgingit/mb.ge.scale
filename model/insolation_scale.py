@@ -15,10 +15,10 @@ from .object_location import ObjectLocation
 from .sector import Sector
 from .sun_ray import SunRay
 from .vector import Vector
-from util import xyz_to_direction, direction_to_xyz, show_ray
+from util import xyz_to_direction, direction_to_xyz, show_ray, hours_to_string
 
 
-class InsolationScale(Sector):
+class InsolationScale(object):
     length = 25000/304.8
     approximately = True
     hour_start = 7
@@ -35,58 +35,77 @@ class InsolationScale(Sector):
         # Object geographical location
         self.location = ObjectLocation(self.doc)
 
-        hours = [
+        self.ruler = self.get_rays(
             self.hour_start + i * self.step
             for i in range(int((self.hour_end-self.hour_start) / self.step) + 1)
-        ]
-        self.ruler = [
+
+        )
+
+    def get_rays(self, hours):
+        return [
             SunRay(self, float(hour))
             for hour in hours
         ]
-        self.sector = 2*pi - self.ruler[-1].direction + self.ruler[0].direction
+    
+    def set_ruler(self, ruler_id):
+        symbol = self.doc.GetElement(ElementId(ruler_id))
+        hours = range(7, 18)
+        ruler = self.get_rays(hours)
+        for suffix, ray in enumerate(ruler, start=7):
+            if suffix == 12: continue
+            name = 'Hour %d' % suffix
+            angle = ray.direction - self.location.north.direction
+            parameter = symbol.LookupParameter(name)
+            parameter.Set(angle)
+            TaskDialog.Show("_deb", str(angle))
 
-        super().__init__(self.location.south, self.sector)
 
-        self.origin = XYZ()
-        self.location.latitude = self.location.latitude
-        self.normal = XYZ(
+    @property
+    def normal(self):
+        return XYZ(
             -self.location.north.X * cos(self.location.latitude),
             -self.location.north.Y * cos(self.location.latitude),
             -sin(self.location.latitude)
         )
-        self.plane = Plane.CreateByNormalAndOrigin(self.normal, self.origin)
-
+    
+    @property
+    def plane(self):
+        return Plane.CreateByNormalAndOrigin(self.normal, self.origin)
+    
     def place(self, holder):
-        self.origin = holder.Location.Point
         height = holder.Symbol.get_Parameter(BuiltInParameter.FAMILY_HEIGHT_PARAM).AsDouble()
-        self.origin = self.origin.Add(XYZ(0, 0, height/2))
-        self.plane = Plane.CreateByNormalAndOrigin(self.normal, self.origin)
-
+        self.origin = holder.Location.Point.Add(XYZ(0, 0, height/2))
 
         host = holder.Host
         depth = host.Width
         width = holder.Symbol.get_Parameter(BuiltInParameter.FURNITURE_WIDTH).AsDouble()
         angle = atan(width/depth) # half if the full scale angle
 
-        rot = holder.Location.Rotation
-        rot_d = degrees(rot)
-        rot = Vector(rot)
-        holder.LookupParameter('Comments').Set(str(rot_d))
-        start_a = rot.direction - angle
-        end_a = rot.direction + angle
+        window_direction = Vector(holder.FacingOrientation)
+        window_direction = window_direction.rotated(pi)
+        
+        start = window_direction.rotated(-angle)
+        end = window_direction.rotated(angle)
+        
+        self.ruler = [
+            current for current in self.ruler
+            if current.inside((start, end))
+        ]
 
-
+        rise, down = self.ruler[0].hour, self.ruler[-1].hour
+        insolation_range = '%s -- %s' % (hours_to_string(rise), hours_to_string(down))
+        
+        holder.LookupParameter('Insolation').Set(7.25)
+        holder.LookupParameter('InsolationRange').Set(insolation_range)
+        #holder.LookupParameter('Comments').Set(comment)
+        
         plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), self.origin)
         
-        start = Vector(start_a)
-        end = Vector(end_a)
-
-        #show_ray(self.doc, self.origin, start.xyz, plane)
-        #show_ray(self.doc, self.origin, end.xyz, plane)
+        show_ray(self.doc, self.origin, start.xyz, plane)
+        show_ray(self.doc, self.origin, end.xyz, plane)
 
 
-        """self.direction_angle = atan2(self._axis.X, self._axis.Y)  # note: x,y swapped because reference is +Y
-        if self.direction_angle < 0: self.direction_angle += 2*pi"""
+
 
     @property
     def solar_declination(self):

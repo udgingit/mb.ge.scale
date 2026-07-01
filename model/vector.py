@@ -13,7 +13,7 @@ class Vector(object):
             self.direction = xyz_to_direction(self.xyz)
 
         elif type(source) is float:
-            self.direction = source
+            self.direction = source % (2*pi) # direction must be in [0, 2π)
             self.xyz = direction_to_xyz(source)
         else:
             raise TypeError(
@@ -28,6 +28,9 @@ class Vector(object):
 
         if abs(self.xyz.GetLength() - 1.0) > 1e-9:
             raise ValueError('Vector is not normalized.')
+        
+        if self.direction >= 2*pi:
+            raise ValueError('Invalid direction value %d.' % self.direction)
 
     def rotated(self, angle):
         rotation = Transform.CreateRotation(
@@ -35,10 +38,17 @@ class Vector(object):
             angle
         )
         xyz = rotation.OfVector(self.xyz).Normalize()
-        return xyz_to_direction(xyz)
+        return Vector(xyz)
     
     def rotate(self, angle):
-        self = self.rotated(self, angle)
+        self = self.rotated(angle)
+
+    def inside(self, interval):
+        start, end = (v.direction for v in interval)
+        if start <= end:
+            return start <= self.direction <= end
+        else:
+            return self.direction >= start or self.direction <= end
     
     def __getattr__(self, name):
         return getattr(self.xyz, name)        
