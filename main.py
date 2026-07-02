@@ -247,6 +247,7 @@ o = InsolationScale(doc)
 o.set_ruler(345853)
 
 for w in windows:
+    #if w.Id.IntegerValue == 327867:
     o = InsolationScale(doc)
     o.place(w)
     #o.show_axis()

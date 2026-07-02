@@ -112,15 +112,19 @@ class InsolationScale(object):
         start = window_direction.rotated(-angle)
         end = window_direction.rotated(angle)
         
+        gr = (self.ruler[-1], self.ruler[0], )
         self.ruler = [
             current for current in self.ruler
             if current.inside((start, end))
         ]
 
-        self.ruler = [
-            SunRay(self, end),
-            SunRay(self, start),
-        ]
+        if end.inside(gr): self.ruler.insert(0, SunRay(self, end))
+        if start.inside(gr): self.ruler.append(SunRay(self, start))
+
+        #self.ruler = [
+        #    SunRay(self, end),
+        #    SunRay(self, start),
+        #]
         try:
             rise, down = self.ruler[0].hour, self.ruler[-1].hour
             insolation_range = '%s -- %s' % (hours_to_string(rise), hours_to_string(down))
