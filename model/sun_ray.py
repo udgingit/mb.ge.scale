@@ -1,4 +1,4 @@
-from math import radians, degrees, sin, cos, asin, atan2, pi
+from math import radians, degrees, sin, cos, asin, atan2, pi, tan
 from Autodesk.Revit.DB import XYZ
 from Autodesk.Revit.UI import TaskDialog
 
@@ -10,6 +10,7 @@ class SunRay(Vector):
         declination = scale.solar_declination
         north = scale.location.north
         latitude = scale.location.latitude
+
         if type(hour) is float:
             self.hour = hour
             # Solar hour angle
@@ -26,15 +27,43 @@ class SunRay(Vector):
             cos_A = (
                 -cos(latitude) * sin(declination) -
                 sin(latitude) * cos(declination) * cos(H)
-            ) / cos(altitude) 
-            #TaskDialog.Show(str(hour), str(sin_A) + ' ' + str(cos_A))
+            ) / cos(altitude)
+
             A = atan2(sin_A, cos_A)
             super().__init__(north.direction - A)
 
-            # full 3D vector to Sun
-            self.sun = (
-                self.xyz.Multiply(cos(altitude)).Add(
-                XYZ.BasisZ.Multiply(sin(altitude)))
-            ).Normalize()
+        if type(hour) is Vector:
+            direction = hour.direction
+
+            A = north.direction - direction
+            A = (A + pi) % (2 * pi) - pi
+
+            H = atan2(
+                sin(A),
+                cos(A) * sin(latitude) + tan(declination) * cos(latitude)
+            )
+
+            altitude = asin(
+                sin(latitude) * sin(declination) +
+                cos(latitude) * cos(declination) * cos(H)
+            )
+
+            # IMPORTANT FIX: reconstruct azimuth properly
+            sin_A = (-cos(declination) * sin(H))
+            cos_A = (
+                -cos(latitude) * sin(declination) -
+                sin(latitude) * cos(declination) * cos(H)
+            )
+
+            A = atan2(sin_A, cos_A)
+
+            super().__init__(north.direction - A)
+
+            self.hour = 12.0 + degrees(H) / 15.0
+
+        # full 3D vector to Sun
+        self.sun = (
+            self.xyz.Multiply(cos(altitude)).Add(
+            XYZ.BasisZ.Multiply(sin(altitude)))
+        ).Normalize()
        
-            #TaskDialog.Show(str(hour) + ' ' + str(degrees(A)), str(self.sun))

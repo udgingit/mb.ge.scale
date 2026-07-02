@@ -6,7 +6,7 @@ from Autodesk.Revit.DB import (
     ElementId, BuiltInCategory, BuiltInParameter,
     XYZ, Plane, Line, DirectShape, GeometryObject,
     BRepBuilder, BRepBuilderSurfaceGeometry, BRepType, BRepBuilderEdgeGeometry, BRepBuilderOutcome,
-    Transform
+    ElementTransformUtils,
 )
 from Autodesk.Revit.Exceptions import ArgumentException
 from Autodesk.Revit.UI import TaskDialog
@@ -57,7 +57,32 @@ class InsolationScale(object):
             angle = ray.direction - self.location.north.direction
             parameter = symbol.LookupParameter(name)
             parameter.Set(angle)
-            #TaskDialog.Show("_deb", str(angle))
+
+        fam = self.doc.GetElement(ElementId(345855))
+        transform = fam.GetTransform()
+        y = transform.BasisY
+
+        #current = atan2(y.X, y.Y)  # angle from global Y, CCW
+        #if current < 0:
+        #    current += 2 * pi
+        current = 2*pi - y.AngleOnPlaneTo(XYZ(0, 1, 0), XYZ(0, 0, 1))
+        target = self.location.north.direction
+
+        delta = target - current
+
+        delta = target - current
+        loc = fam.Location
+        axis = Line.CreateBound(
+            loc.Point,
+            loc.Point.Add(XYZ.BasisZ)
+        )
+
+        ElementTransformUtils.RotateElement(
+            self.doc,
+            fam.Id,
+            axis,
+            delta
+        )
 
 
     @property
@@ -92,6 +117,10 @@ class InsolationScale(object):
             if current.inside((start, end))
         ]
 
+        self.ruler = [
+            SunRay(self, end),
+            SunRay(self, start),
+        ]
         try:
             rise, down = self.ruler[0].hour, self.ruler[-1].hour
             insolation_range = '%s -- %s' % (hours_to_string(rise), hours_to_string(down))

@@ -161,17 +161,6 @@ def xyz_to_direction(
         XYZ.BasisZ
     )
 
-
-"""class AngleVector(object):
-    def __init__(self, default=XYZ(0, 1, 0)):
-        self.default = default
-
-    def to_vector(angle):
-        return XYZ(
-            sin(angle),
-            cos(angle),
-            0
-        )"""
 def hours_to_string(hours):
     minutes = hours * 60
     hours = int(minutes/60)
