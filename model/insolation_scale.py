@@ -57,7 +57,7 @@ class InsolationScale(object):
             angle = ray.direction - self.location.north.direction
             parameter = symbol.LookupParameter(name)
             parameter.Set(angle)
-            TaskDialog.Show("_deb", str(angle))
+            #TaskDialog.Show("_deb", str(angle))
 
 
     @property
@@ -92,17 +92,20 @@ class InsolationScale(object):
             if current.inside((start, end))
         ]
 
-        rise, down = self.ruler[0].hour, self.ruler[-1].hour
-        insolation_range = '%s -- %s' % (hours_to_string(rise), hours_to_string(down))
+        try:
+            rise, down = self.ruler[0].hour, self.ruler[-1].hour
+            insolation_range = '%s -- %s' % (hours_to_string(rise), hours_to_string(down))
+            
+            #holder.LookupParameter('Insolation').Set(7.25)
+            holder.LookupParameter('InsolationRange').Set(insolation_range)
+            #holder.LookupParameter('Comments').Set(comment)
+            
+            ##plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), self.origin)
+            #show_ray(self.doc, self.origin, start.xyz, plane)
+            #show_ray(self.doc, self.origin, end.xyz, plane)
+            
+        except: pass
         
-        holder.LookupParameter('Insolation').Set(7.25)
-        holder.LookupParameter('InsolationRange').Set(insolation_range)
-        #holder.LookupParameter('Comments').Set(comment)
-        
-        plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), self.origin)
-        
-        show_ray(self.doc, self.origin, start.xyz, plane)
-        show_ray(self.doc, self.origin, end.xyz, plane)
 
 
 
