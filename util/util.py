@@ -161,8 +161,8 @@ def xyz_to_direction(
         XYZ.BasisZ
     )
 
-def hours_to_string(hours):
+def hour_to_string(hours):
     minutes = hours * 60
     hours = int(minutes/60)
-    minutes = minutes%60
-    return "%d' %d ''" % (hours, minutes)
+    minutes %= 60
+    return "%d'%02d\"" % (hours, minutes)

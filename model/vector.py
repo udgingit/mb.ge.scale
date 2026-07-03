@@ -41,7 +41,10 @@ class Vector(object):
         return Vector(xyz)
     
     def rotate(self, angle):
-        self = self.rotated(angle)
+        rotated = self.rotated(angle)
+        self.xyz = rotated.xyz
+        self.direction = rotated.direction
+        self.verify()
 
     def inside(self, interval):
         start, end = (v.direction for v in interval)

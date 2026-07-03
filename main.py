@@ -224,7 +224,7 @@ class InsScale(Sector):
 #transaction.Start('New transaction')
 TransactionManager.Instance.EnsureInTransaction(doc);
 
-generics = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_GenericModel).WhereElementIsNotElementType().ToElementIds() 
+generics = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Mass).WhereElementIsNotElementType().ToElementIds() 
 for i in generics: doc.Delete(i)
 lines = FilteredElementCollector(doc).OfCategory(BuiltInCategory.OST_Lines).WhereElementIsNotElementType().ToElementIds() 
 for i in lines: doc.Delete(i)

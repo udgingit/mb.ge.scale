@@ -15,12 +15,12 @@ from .object_location import ObjectLocation
 from .sector import Sector
 from .sun_ray import SunRay
 from .vector import Vector
-from util import xyz_to_direction, direction_to_xyz, show_ray, hours_to_string
+from util import xyz_to_direction, direction_to_xyz, show_ray, hour_to_string
 
 
-class InsolationScale(object):
+class InsolationScale(Sector):
     length = 25000/304.8
-    approximately = True
+    approximately = False
     hour_start = 7
     hour_end = 24 - hour_start
     step = 0.25
@@ -40,6 +40,13 @@ class InsolationScale(object):
             for i in range(int((self.hour_end-self.hour_start) / self.step) + 1)
 
         )
+        # TODO think about so complicated inheritance
+        start = self.ruler[-1]
+        angle = self.location.south.direction - start.direction
+        super().__init__(
+            self.location.south,
+            angle
+            )
 
     def get_rays(self, hours):
         return [
@@ -104,44 +111,33 @@ class InsolationScale(object):
         host = holder.Host
         depth = host.Width
         width = holder.Symbol.get_Parameter(BuiltInParameter.FURNITURE_WIDTH).AsDouble()
-        angle = atan(width/depth) # half if the full scale angle
+        angle = atan(width/depth) # half of the full window review
 
         window_direction = Vector(holder.FacingOrientation)
-        window_direction = window_direction.rotated(pi)
+        window_direction.rotate(pi)
+        window_scale = Sector(window_direction, angle)
         
-        start = window_direction.rotated(-angle)
-        end = window_direction.rotated(angle)
-        
-        gr = (self.ruler[-1], self.ruler[0], )
         self.ruler = [
             current for current in self.ruler
-            if current.inside((start, end))
+            if window_scale.contains(current)
         ]
 
-        if end.inside(gr): self.ruler.insert(0, SunRay(self, end))
-        if start.inside(gr): self.ruler.append(SunRay(self, start))
+        start, end = window_scale.limits
 
-        #self.ruler = [
-        #    SunRay(self, end),
-        #    SunRay(self, start),
-        #]
-        try:
-            rise, down = self.ruler[0].hour, self.ruler[-1].hour
-            insolation_range = '%s -- %s' % (hours_to_string(rise), hours_to_string(down))
-            
-            #holder.LookupParameter('Insolation').Set(7.25)
-            holder.LookupParameter('InsolationRange').Set(insolation_range)
-            #holder.LookupParameter('Comments').Set(comment)
-            
-            ##plane = Plane.CreateByNormalAndOrigin(XYZ(0, 0, 1), self.origin)
-            #show_ray(self.doc, self.origin, start.xyz, plane)
-            #show_ray(self.doc, self.origin, end.xyz, plane)
-            
-        except: pass
+        if end.inside(self.limits): self.ruler.insert(0, SunRay(self, end))
+        if start.inside(self.limits): self.ruler.append(SunRay(self, start))
         
-
-
-
+        if self.ruler:
+            rise, down = self.ruler[0].hour, self.ruler[-1].hour
+            range = '%s÷%s' % (hour_to_string(rise), hour_to_string(down))
+            total = down - rise
+            info = '%s (%s)' % (range, hour_to_string(total))
+        else:
+            info = ''
+            total = 0
+            
+        holder.LookupParameter('InsolationRange').Set(info)
+        holder.LookupParameter('Insolation').Set(round(total, 2) * 3600)
 
     @property
     def solar_declination(self):
@@ -152,7 +148,7 @@ class InsolationScale(object):
             )
         
         B = radians(360.0 * (self.day - 81) / 365.0)
-        self.declination = radians(
+        return radians(
             0.006918
             - 0.399912 * cos(B)
             + 0.070257 * sin(B)
@@ -180,13 +176,21 @@ class InsolationScale(object):
         material_id = ElementId(323956)
         
 
-        for i in range(len(self.ruler)-1):
+        sectors = [
+            (prev, cur)
+            for prev, cur in zip(self.ruler, self.ruler[1:])
+        ]
+
+        #for i in range(len(self.ruler)-1):
+        for current, next in sectors:
             face_id = builder.AddFace(face, False) #False - orientations agree
             builder.SetFaceMaterialId(face_id, material_id)
             loop_id = builder.AddLoop(face_id)
 
-            left = self.ruler[i+1].sun
-            right = self.ruler[i].sun
+            #left = self.ruler[i+1].sun
+            #right = self.ruler[i].sun
+            left = next.sun
+            right = current.sun
 
             a = self.origin
             c = self.origin.Add(left.Multiply(self.length))
@@ -225,7 +229,7 @@ class InsolationScale(object):
             #self.is_valid = False
             return
 
-        self.shape = DirectShape.CreateElement(self.doc, ElementId(BuiltInCategory.OST_GenericModel))
+        self.shape = DirectShape.CreateElement(self.doc, ElementId(BuiltInCategory.OST_Mass))
         
         result = builder.GetResult()
         result = List[GeometryObject]([result])
