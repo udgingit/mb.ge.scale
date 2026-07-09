@@ -3,6 +3,7 @@ from .util import (
     direction_to_xyz,
     show_ray,
     hour_to_string,
+    detect_intersection,
 )
 
 __all__ = [
@@ -10,4 +11,5 @@ __all__ = [
     'direction_to_xyz'
     'show_ray',
     'hour_to_string',
+    'detect_intersection',
 ]

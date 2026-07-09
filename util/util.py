@@ -165,4 +165,15 @@ def hour_to_string(hours):
     minutes = hours * 60
     hours = int(minutes/60)
     minutes %= 60
+    return '%d:%02d' % (hours, minutes)
     return "%d'%02d\"" % (hours, minutes)
+
+def detect_intersection(intersector, origin, direction, exceptions=set()):
+    def get_ids():
+        return (
+            hit.GetReference().ElementId
+            for hit in intersector.Find(origin, direction)
+            if hit.GetReference().ElementId not in exceptions
+        )
+
+    return next(get_ids(), None) is not None
