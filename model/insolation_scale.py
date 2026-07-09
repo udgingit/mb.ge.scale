@@ -15,7 +15,8 @@ from .object_location import ObjectLocation
 from .sector import Sector
 from .sun_ray import SunRay
 from .vector import Vector
-from model import SunSectors, SunSectorGroups
+from .sun_sectors import SunSectors
+from .sun_sector_groups import SunSectorGroups
 from util import show_ray, hour_to_string, detect_intersection
 
 
@@ -26,10 +27,11 @@ class InsolationScale(Sector):
 
     def __init__(self,
                  doc,
-                 materials,
-                 step=15,
-                 day='22.03',
-                 category = BuiltInCategory.OST_Mass):
+                 materials,  # dictionary with materials map
+                 step=15,  # minutes between two SunRays
+                 day='22.03',  # day of the year
+                 category=BuiltInCategory.OST_Mass  # geometry shape Category
+        ):
         self.doc = doc
         self.materials = materials
         self.category_id = ElementId(category)
