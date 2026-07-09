@@ -3,7 +3,7 @@ from math import sin, cos, degrees, radians, sqrt, pi, asin, atan2, tan, atan
 
 from System.Collections.Generic import List
 from Autodesk.Revit.DB import (
-    ElementId, BuiltInCategory, BuiltInParameter,
+    FilteredElementCollector, FamilySymbol, AnnotationSymbol, ElementId, BuiltInCategory, BuiltInParameter,
     XYZ, Plane, Line, DirectShape, GeometryObject,
     BRepBuilder, BRepBuilderSurfaceGeometry, BRepType, BRepBuilderEdgeGeometry, BRepBuilderOutcome,
     ElementTransformUtils,
@@ -24,9 +24,16 @@ class InsolationScale(Sector):
     approximately = False
     start_hour = 7
 
-    def __init__(self, doc, materials, step=15, day='22.03'):
+    def __init__(self,
+                 doc,
+                 materials,
+                 step=15,
+                 day='22.03',
+                 category = BuiltInCategory.OST_Mass):
         self.doc = doc
         self.materials = materials
+        self.category_id = ElementId(category)
+
         # Ordinal number of the day in the year
         self.day = datetime.strptime(day, '%d.%m').timetuple().tm_yday
 
@@ -126,7 +133,7 @@ class InsolationScale(Sector):
         if builder.Finish() == BRepBuilderOutcome.Failure:
             return None, 'Finish exception'
 
-        self.shape = DirectShape.CreateElement(self.doc, ElementId(BuiltInCategory.OST_Mass))
+        self.shape = DirectShape.CreateElement(self.doc, self.category_id)
         
         result = builder.GetResult()
         result = List[GeometryObject]([result])
@@ -180,39 +187,40 @@ class InsolationScale(Sector):
     def range(self):
         return self.groups.range
     
-    def set_ruler(self, ruler_id):
-        symbol = self.doc.GetElement(ElementId(ruler_id))
-        hours = range(7, 18)
-        ruler = self.get_rays(hours)
-        for suffix, ray in enumerate(ruler, start=7):
-            if suffix == 12: continue
-            name = 'Hour %d' % suffix
-            angle = ray.direction - self.location.north.direction
-            parameter = symbol.LookupParameter(name)
-            parameter.Set(angle)
+    def place_ruler(self, name):
+        symbol = next((
+            symbol for symbol in
+            FilteredElementCollector(self.doc).OfClass(FamilySymbol)
+            if symbol.FamilyName == name
+        ), None)
+        if not symbol: return
 
-        fam = self.doc.GetElement(ElementId(345855))
-        transform = fam.GetTransform()
-        y = transform.BasisY
+        for hour in range(13, 18):
+            ray = SunRay(self, hour)
+            current = ray.direction - self.location.north.direction
+            parameter_name = 'Hour %d' % hour
+            parameter = symbol.LookupParameter(parameter_name)
+            if parameter: parameter.Set(current)
+        
+        annotations = [
+            annotation for annotation in FilteredElementCollector(self.doc)
+                .OfCategory(BuiltInCategory.OST_GenericAnnotation)
+                .WhereElementIsNotElementType()
+                .ToElements()
+            if annotation.Symbol.Id == symbol.Id
+        ]
+        for annotation in annotations:
+            transform = annotation.GetTransform()
+            y = transform.BasisY
 
-        #current = atan2(y.X, y.Y)  # angle from global Y, CCW
-        #if current < 0:
-        #    current += 2 * pi
-        current = 2*pi - y.AngleOnPlaneTo(XYZ(0, 1, 0), XYZ(0, 0, 1))
-        target = self.location.north.direction
+            current = y.AngleOnPlaneTo(XYZ.BasisY, XYZ.BasisZ)
+            target = self.location.north.direction
 
-        delta = target - current
+            axis = Line.CreateUnbound(annotation.Location.Point, XYZ.BasisZ)
 
-        delta = target - current
-        loc = fam.Location
-        axis = Line.CreateBound(
-            loc.Point,
-            loc.Point.Add(XYZ.BasisZ)
-        )
-
-        ElementTransformUtils.RotateElement(
-            self.doc,
-            fam.Id,
-            axis,
-            delta
-        )
+            ElementTransformUtils.RotateElement(
+                self.doc,
+                annotation.Id,
+                axis,
+                target + current
+            )

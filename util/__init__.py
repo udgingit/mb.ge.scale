@@ -4,6 +4,7 @@ from .util import (
     show_ray,
     hour_to_string,
     detect_intersection,
+    set_lookup,
 )
 
 __all__ = [
@@ -12,4 +13,5 @@ __all__ = [
     'show_ray',
     'hour_to_string',
     'detect_intersection',
+    'set_lookup',
 ]

@@ -24,14 +24,14 @@ class SunSectorGroups(list):
             sun_groups.sort(key=lambda group: group.duration, reverse=True)
 
             for group in sun_groups[2:]:
-                    group.state = 'suppressed'
+                    group.state = 'Suppressed'
 
     @property
     def range(self):
         total, range = 0, ''
         ranges = list()
         for group in self:
-            if group.state != 'sun': continue
+            if group.state != 'Sun': continue
             t, r = group.range
             total += t
             ranges.append(r)
@@ -45,8 +45,8 @@ class SunSectorGroups(list):
 
 class SunSectorGroup(list):
     shadow_states = {
-        True: 'shadow',
-        False: 'sun',
+        True: 'Shadow',
+        False: 'Sun',
     }
 
     def __init__(self, insolation_scale, sector):

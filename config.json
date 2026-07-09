@@ -1,22 +1,14 @@
 {
-  "project_parameters": {
-    "system_code": "MC System Code",
-    "system name": "MC System Name",
-    "system_class": "MB_Blitzschutzklasse",
-    "system_radius": "MB_Radius"
+  "Parameters": {
+    "InsolationRange": "InsolationRange",
+    "Insolation": "Insolation"
   },
-  "values": {
-    "system_code": "BLZ_BLK",
-    "system_name": "Blitzschutz Blitzkugelverfahren"
+  "Materials": {
+    "Sun": "IS - Sun",
+    "Shadow": "IS - SunShadowed",
+    "Suppressed": "IS - Suppressed"
   },
-  "materials": {
-    "protection": {
-      "name": "MB - Lightning Protection",
-      "color": [224, 59, 45],
-      "transparency": 75,
-      "shininess": 1,
-      "smoothness": 1
-    }
+  "Families": {
+    "Ruler": "InsolationRuler"
   }
-
 }

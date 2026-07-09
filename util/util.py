@@ -177,3 +177,9 @@ def detect_intersection(intersector, origin, direction, exceptions=set()):
         )
 
     return next(get_ids(), None) is not None
+
+def set_lookup(element, name_values):
+    for name, value in name_values.items():
+        parameter = element.LookupParameter(name)
+        if parameter is None: continue
+        parameter.Set(value)
