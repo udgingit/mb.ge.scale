@@ -97,6 +97,8 @@ class InsolationScale(Sector):
 
         face = BRepBuilderSurfaceGeometry.Create(self.plane, None)
 
+        south = SunRay(self, float(12))
+        
         for group in self.groups:
             material_id = self.materials[group.state]
             for sector in group:
@@ -108,8 +110,12 @@ class InsolationScale(Sector):
                 loop_id = builder.AddLoop(face_id)
 
                 o = self.origin
-                a = self.origin.Add(left.Multiply(self.length))
-                b = self.origin.Add(right.Multiply(self.length))
+
+                angle = south.AngleOnPlaneTo(left, self.normal)
+                a = self.origin.Add(left.Multiply(self.length/cos(angle)))
+
+                angle = south.AngleOnPlaneTo(right, self.normal)
+                b = self.origin.Add(right.Multiply(self.length/cos(angle)))
 
                 self.edges = (
                     Line.CreateBound(o, b),

@@ -109,6 +109,7 @@ for window in windows:
     set_lookup(window, values)
 
     shape, message = scale.show()
+    #if message: TaskDialog.Show(window.Id.ToString(), message)
     if shape: set_lookup(shape, values)
 
 transaction.Commit()
