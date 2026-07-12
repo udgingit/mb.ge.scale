@@ -2,7 +2,7 @@
   "Uuid": "694d96d4-d198-4a50-a50f-5042037c6cf9",
   "IsCustomNode": false,
   "Description": null,
-  "Name": "mb.ge.template_new",
+  "Name": "mb.ge.scale",
   "ElementResolver": {
     "ResolutionMap": {}
   },
@@ -19,7 +19,7 @@
   "Nodes": [
     {
       "ConcreteType": "PythonNodeModels.PythonNode, PythonNodeModels",
-      "Code": "import os\r\nimport sys\r\nimport importlib\r\nfrom Dynamo.Applications import DynamoRevit\r\nres = list()\r\nworkspace = DynamoRevit().RevitDynamoModel.CurrentWorkspace\r\n\r\nfull_path = workspace.FileName\r\nfile_name = os.path.splitext(os.path.basename(full_path))[0]\r\ncurrent_dir = os.path.dirname(full_path)\r\nproject_dir = os.path.join(\r\n    current_dir,\r\n    '%s.files' % file_name\r\n)\r\nsys.path.append(project_dir)\r\n\r\nsource = os.path.join(project_dir, 'main.py')\r\n\r\nwith open(source, 'r', encoding='utf-8') as file:\r\n    code = file.read()\r\n\r\ncode = code.replace(\r\n    \"project_dir: str = None\",\r\n    \"project_dir = r'%s'\" % project_dir\r\n) \r\ncode = code.replace(\r\n    'uiapp = revit.Application if revit else None',\r\n    'uiapp = DocumentManager.Instance.CurrentUIApplication'\r\n)\r\n\r\nOUT = code\r\n",
+      "Code": "import os\r\nimport sys\r\nimport importlib\r\nfrom Dynamo.Applications import DynamoRevit\r\nres = list()\r\nworkspace = DynamoRevit().RevitDynamoModel.CurrentWorkspace\r\n\r\nfull_path = workspace.FileName\r\nfile_name = os.path.splitext(os.path.basename(full_path))[0]\r\ncurrent_dir = os.path.dirname(full_path)\r\nproject_dir = os.path.join(\r\n    current_dir,\r\n    file_name\r\n)\r\nsys.path.append(project_dir)\r\n\r\nsource = os.path.join(project_dir, 'main.py')\r\n\r\nwith open(source, 'r', encoding='utf-8') as file:\r\n    code = file.read()\r\n\r\ncode = code.replace(\r\n    \"project_dir: str = None\",\r\n    \"project_dir = r'%s'\" % project_dir\r\n) \r\ncode = code.replace(\r\n    'uiapp = revit.Application if revit else None',\r\n    'uiapp = DocumentManager.Instance.CurrentUIApplication'\r\n)\r\n\r\nOUT = code\r\n",
       "Engine": "CPython3",
       "VariableInputPorts": true,
       "Id": "d96d6251d567458f952fa59a5740d3bb",
@@ -124,6 +124,90 @@
       ],
       "Replication": "Disabled",
       "Description": "Runs a Python script from a string."
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.IntegerSlider, CoreNodeModels",
+      "NumberType": "Integer",
+      "MaximumValue": 100,
+      "MinimumValue": 0,
+      "StepValue": 1,
+      "Id": "0c96946cbf8d4c6b8c95dd3db9ab407b",
+      "NodeType": "NumberInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "89866ca54b054b2f8cf3181d9ee95c44",
+          "Name": "",
+          "Description": "Int64",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Produces integer values",
+      "InputValue": 15
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "Id": "e10b37eda630481aab890f9a717cca02",
+      "NodeType": "StringInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "29e1198633204e9c80e4818d9889c418",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string",
+      "InputValue": "22.03"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.StringInput, CoreNodeModels",
+      "Id": "81ead5a6cf0e4565b81121fe50881d42",
+      "NodeType": "StringInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "fa37af027fd64748a800ab5b89bdc803",
+          "Name": "",
+          "Description": "String",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Creates a string",
+      "InputValue": "Insolation"
+    },
+    {
+      "ConcreteType": "CoreNodeModels.Input.BoolSelector, CoreNodeModels",
+      "Id": "1f07521150934d66baf8d219f81af7e9",
+      "NodeType": "BooleanInputNode",
+      "Inputs": [],
+      "Outputs": [
+        {
+          "Id": "3dabccf297114a55a2b4b912ee8cf8dd",
+          "Name": "",
+          "Description": "Boolean",
+          "UsingDefaultValue": false,
+          "Level": 2,
+          "UseLevels": false,
+          "KeepListStructure": false
+        }
+      ],
+      "Replication": "Disabled",
+      "Description": "Enables selection between True and False",
+      "InputValue": true
     }
   ],
   "Connectors": [
@@ -131,6 +215,30 @@
       "Start": "95b00a078ff446c9a832513a2100caac",
       "End": "aac79ee48d514f91ae0f20d62834430e",
       "Id": "cac61b9bd5224be1a4ce5c71db7f0e72",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "89866ca54b054b2f8cf3181d9ee95c44",
+      "End": "090d537037ac425fad637319575eb1e5",
+      "Id": "f2d4332a665d4416a3d7de32572a358a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "29e1198633204e9c80e4818d9889c418",
+      "End": "06e815d2f96e4077a3a720d4f6015959",
+      "Id": "c22828d247c64193a699e401fb45091a",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "fa37af027fd64748a800ab5b89bdc803",
+      "End": "cedc4c61f29341b682d84180edd1ec0a",
+      "Id": "1fb895f343a445529dadf267d6561556",
+      "IsHidden": "False"
+    },
+    {
+      "Start": "3dabccf297114a55a2b4b912ee8cf8dd",
+      "End": "4dc42e649a96411bb502705e84c20e7c",
+      "Id": "d6c8ccb17d6745cb8074eb3dbb196cda",
       "IsHidden": "False"
     }
   ],
@@ -203,11 +311,51 @@
         "ShowGeometry": true,
         "X": 2251.538381667915,
         "Y": 1117.336857839563
+      },
+      {
+        "Id": "0c96946cbf8d4c6b8c95dd3db9ab407b",
+        "Name": "Integer Slider",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1864.6198135779841,
+        "Y": 1519.9917046585037
+      },
+      {
+        "Id": "e10b37eda630481aab890f9a717cca02",
+        "Name": "String",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1845.4366815927,
+        "Y": 1574.800653187887
+      },
+      {
+        "Id": "81ead5a6cf0e4565b81121fe50881d42",
+        "Name": "String",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 2004.382632327912,
+        "Y": 1653.3601460800035
+      },
+      {
+        "Id": "1f07521150934d66baf8d219f81af7e9",
+        "Name": "Triangle",
+        "IsSetAsInput": false,
+        "IsSetAsOutput": false,
+        "Excluded": false,
+        "ShowGeometry": true,
+        "X": 1836.2386088233786,
+        "Y": 1132.1104400966085
       }
     ],
     "Annotations": [],
-    "X": -1840.285945941034,
-    "Y": -972.8205437317307,
-    "Zoom": 1.039025689829951
+    "X": -1546.392229887804,
+    "Y": -799.0474469369466,
+    "Zoom": 0.8656505548975155
   }
 }

@@ -30,10 +30,12 @@ class InsolationScale(Sector):
                  materials,  # dictionary with materials map
                  step=15,  # minutes between two SunRays
                  day='22.03',  # day of the year
+                 triangle=True,
                  category=BuiltInCategory.OST_Mass  # geometry shape Category
         ):
         self.doc = doc
         self.materials = materials
+        self.triangle = triangle
         self.category_id = ElementId(category)
 
         # Ordinal number of the day in the year
@@ -111,11 +113,11 @@ class InsolationScale(Sector):
 
                 o = self.origin
 
-                angle = south.AngleOnPlaneTo(left, self.normal)
-                a = self.origin.Add(left.Multiply(self.length/cos(angle)))
+                c = cos(south.AngleOnPlaneTo(left, self.normal)) if self.triangle else 1
+                a = self.origin.Add(left.Multiply(self.length/c))
 
-                angle = south.AngleOnPlaneTo(right, self.normal)
-                b = self.origin.Add(right.Multiply(self.length/cos(angle)))
+                c = cos(south.AngleOnPlaneTo(right, self.normal)) if self.triangle else 1
+                b = self.origin.Add(right.Multiply(self.length/c))
 
                 self.edges = (
                     Line.CreateBound(o, b),

@@ -39,7 +39,7 @@ from util import set_lookup
 
 
 category = BuiltInCategory.OST_Mass
-step, day, view_name = IN[0], IN[1], IN[2]  #type: ignore
+step, day, view_name, triangle = IN[0], IN[1], IN[2], IN[3]  #type: ignore
 res = dict()
 
 
@@ -98,7 +98,7 @@ scale.place_ruler(InsolationRuler)
 
 
 for window in windows:
-    scale = InsolationScale(doc, palette, step=step, day=day)
+    scale = InsolationScale(doc, palette, step=step, day=day, triangle=triangle)
     scale.place(window, intersector)
     total, range = scale.range
 
